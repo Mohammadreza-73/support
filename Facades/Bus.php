@@ -22,14 +22,14 @@ use Illuminate\Support\Testing\Fakes\BusFake;
  * @method static \Illuminate\Bus\Dispatcher map(array $map)
  * @method static void except(array|string $jobsToDispatch)
  * @method static void assertDispatched(string|\Closure $command, callable|int|null $callback = null)
- * @method static void assertDispatchedTimes(string $command, int $times = 1)
+ * @method static void assertDispatchedTimes(string|\Closure $command, int $times = 1)
  * @method static void assertNotDispatched(string|\Closure $command, callable|null $callback = null)
  * @method static void assertNothingDispatched()
  * @method static void assertDispatchedSync(string|\Closure $command, callable|int|null $callback = null)
- * @method static void assertDispatchedSyncTimes(string $command, int $times = 1)
+ * @method static void assertDispatchedSyncTimes(string|\Closure $command, int $times = 1)
  * @method static void assertNotDispatchedSync(string|\Closure $command, callable|null $callback = null)
  * @method static void assertDispatchedAfterResponse(string|\Closure $command, callable|int|null $callback = null)
- * @method static void assertDispatchedAfterResponseTimes(string $command, int $times = 1)
+ * @method static void assertDispatchedAfterResponseTimes(string|\Closure $command, int $times = 1)
  * @method static void assertNotDispatchedAfterResponse(string|\Closure $command, callable|null $callback = null)
  * @method static void assertChained(array $expectedChain)
  * @method static void assertDispatchedWithoutChain(string|\Closure $command, callable|null $callback = null)
@@ -60,9 +60,13 @@ class Bus extends Facade
      */
     public static function fake($jobsToFake = [], BatchRepository $batchRepository = null)
     {
-        static::swap($fake = new BusFake(static::getFacadeRoot(), $jobsToFake, $batchRepository));
+        $actualDispatcher = static::isFake()
+                ? static::getFacadeRoot()->dispatcher
+                : static::getFacadeRoot();
 
-        return $fake;
+        return tap(new BusFake($actualDispatcher, $jobsToFake, $batchRepository), function ($fake) {
+            static::swap($fake);
+        });
     }
 
     /**
